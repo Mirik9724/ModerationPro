@@ -11,14 +11,13 @@ inf:
   wlu+: "+@nick in WLU"
   wlu-: "-@nick in WLU"
   kick: "@nick kicked from this server"
-  ip: "
-  JE: 
-  ```play.example.com```
-
-  BE: 
-  ```play.example.pe```
-  "
-  ban: "@nick was permanently banned by @staff. Reason: @reason",
-  tempban: "@nick was temporarily banned by @staff for @time. Reason: @reason",
-  unban: "@nick was unbanned by @staff.",
+  ip: |
+    JE: 
+    ```play.example.com```
+    
+    BE: 
+    ```play.example.pe```
+  ban: "@nick was permanently banned by @staff. Reason: @reason"
+  tempban: "@nick was temporarily banned by @staff for @time. Reason: @reason"
+  unban: "@nick was unbanned by @staff."
 
