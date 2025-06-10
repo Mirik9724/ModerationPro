@@ -1,0 +1,24 @@
+ds_token: YOUR_DISCORD_BOT_TOKEN
+role_id: 123456789012345678 #role who can use coommands(in ds)
+
+commmands: #test
+  wlu-add: ["!wlu-add", "!wlu+"]
+  wlu-del: ["!wlu-del", "!wlu-", "!wlu-remove"]
+  kick: ["!kick"]
+
+inf:
+  subcom: "Please provide arguments for this command"
+  wlu+: "+@nick in WLU"
+  wlu-: "-@nick in WLU"
+  kick: "@nick kicked from this server"
+  ip: "
+  JE: 
+  ```play.example.com```
+
+  BE: 
+  ```play.example.pe```
+  "
+  ban: "@nick was permanently banned by @staff. Reason: @reason",
+  tempban: "@nick was temporarily banned by @staff for @time. Reason: @reason",
+  unban: "@nick was unbanned by @staff.",
+

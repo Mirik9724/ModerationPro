@@ -1,0 +1,7 @@
+name: ModerationPro
+version: '0.1.1'
+main: net.Mirik9724.moderationPro.ModerationPro
+api-version: '1.18'
+authors: [ Mirik9724 ]
+description: ModerationPro is a Minecraft plugin that lets you moderate your server via Discord. Supports whitelist, bans, and kicks with Whitelist Ultra and AdvancedBan integration. Role-restricted commands and customizable messages.
+website: https://modrinth.com/plugin/moderationpro
