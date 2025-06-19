@@ -1,5 +1,5 @@
 name: ModerationPro
-version: '0.1.2'
+version: '0.1.5'
 main: net.Mirik9724.moderationPro.ModerationPro
 api-version: '1.18'
 authors: [ Mirik9724 ]

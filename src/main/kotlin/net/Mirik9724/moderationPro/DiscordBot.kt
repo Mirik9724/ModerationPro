@@ -101,6 +101,37 @@ object DiscordBot : ListenerAdapter() {
                 }
             }
 
+            message.startsWith("!wlu-change") -> {
+                val args = message.removePrefix("!wlu-change").trim()
+                val parts = args.split(" ", limit = 2)
+                val mentionedMembers = event.message.mentions.members
+
+                if (parts.size == 2 && mentionedMembers.isNotEmpty()) {
+                    val oldNick = parts[0].trim('@', ' ')
+                    val newNick = parts[1].trim()
+                    val memberToUpdate = mentionedMembers[0]
+
+                    // Меняем ник в Discord
+                    memberToUpdate.modifyNickname(newNick).queue()
+
+                    // Удаляем старый ник из вайтлиста
+                    Bukkit.getScheduler().runTask(plugin2, Runnable {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu remove $oldNick")
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu add $newNick")
+                    })
+
+                    val response = Config.getData(pcon, "inf.change")
+                        .replace("@old", oldNick)
+                        .replace("@new", newNick)
+
+                    event.channel.sendMessage(response).queue()
+                    logger_.info("Пользователь $oldNick изменён на $newNick и добавлен в вайтлист.")
+                } else {
+                    event.channel.sendMessage(Config.getData(pcon, "inf.subcom")).queue()
+                }
+            }
+
+
             message.startsWith("!kick") -> {
                 val args = message.removePrefix("!kick").trim()
 
@@ -124,6 +155,14 @@ object DiscordBot : ListenerAdapter() {
             }
 
             message.startsWith("!ip") -> {
+                val ipRoleId = Config.getData(pcon, "ip_role_id")
+
+                if (!hasRole(member, ipRoleId)) {
+                    val deniedMessage = Config.getData(pcon, "ip_denied")
+                    event.channel.sendMessage(deniedMessage).queue()
+                    return
+                }
+
                 val response = Config.getData(pcon, "inf.ip")
                 event.channel.sendMessage(response).queue()
             }
@@ -135,7 +174,10 @@ object DiscordBot : ListenerAdapter() {
                     val reason = args[1]
                     val staff = event.member?.effectiveName ?: "Unknown"
 
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "ban $mcNick $reason")
+                    Bukkit.getScheduler().runTask(plugin2, Runnable {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "ban $mcNick $reason")
+                    })
+
                     val response = Config.getData(pcon, "inf.ban")
                         .replace("@nick", mcNick)
                         .replace("@reason", reason)
@@ -156,7 +198,10 @@ object DiscordBot : ListenerAdapter() {
                     val reason = args[2]
                     val staff = event.member?.effectiveName ?: "Unknown"
 
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tempban $mcNick $time $reason")
+                    Bukkit.getScheduler().runTask(plugin2, Runnable {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tempban $mcNick $time $reason")
+                    })
+
                     val response = Config.getData(pcon, "inf.tempban")
                         .replace("@nick", mcNick)
                         .replace("@time", time)
@@ -175,7 +220,10 @@ object DiscordBot : ListenerAdapter() {
                 if (mcNick.isNotEmpty()) {
                     val staff = event.member?.effectiveName ?: "Unknown"
 
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "unban $mcNick")
+                    Bukkit.getScheduler().runTask(plugin2, Runnable {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "unban $mcNick")
+                    })
+
                     val response = Config.getData(pcon, "inf.unban")
                         .replace("@nick", mcNick)
                         .replace("@staff", staff)
@@ -186,11 +234,13 @@ object DiscordBot : ListenerAdapter() {
                     event.channel.sendMessage(Config.getData(pcon, "inf.subcom")).queue()
                 }
             }
+
             message.startsWith("!help") -> {
                 val helpMessage = """
         **Available commands:**
         `!wlu-add @user <mcNick>` - Add user to whitelist and change Discord nickname
         `!wlu-del <mcNick>` - Remove user from whitelist and reset Discord nickname
+        `!wlu-change @user <newMcNick>` - Change Minecraft nickname and Discord nickname
         `!kick <player>` - Kick a player from the server
         `!ban <player> <reason>` - Ban a player with reason
         `!tempban <player> <time> <reason>` - Temporarily ban a player
