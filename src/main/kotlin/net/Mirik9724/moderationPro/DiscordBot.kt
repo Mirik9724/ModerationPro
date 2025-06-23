@@ -30,6 +30,10 @@ object DiscordBot : ListenerAdapter() {
         return member.roles.any { it.id == roleId }
     }
 
+    private fun canBotInteractWith(guild: net.dv8tion.jda.api.entities.Guild, target: net.dv8tion.jda.api.entities.Member): Boolean {
+        return guild.selfMember.canInteract(target)
+    }
+
     override fun onMessageReceived(event: MessageReceivedEvent) {
         if (event.author.isBot) return
 
@@ -48,52 +52,53 @@ object DiscordBot : ListenerAdapter() {
                     val memberToRename = mentionedMembers[0]
                     val mcNick = parts[1].trim()
 
-                    // Меняем ник в Discord
+                    if (!canBotInteractWith(event.guild, memberToRename)) {
+                        val denied = Config.getData(pcon, "inf.no_perm_change").replace("@nick", memberToRename.effectiveName)
+                        event.channel.sendMessage(denied).queue()
+                        return
+                    }
+
                     memberToRename.modifyNickname(mcNick).queue()
 
-                    // Подготавливаем сообщение об успешном добавлении
                     val response = Config.getData(pcon, "inf.wlu+").replace("@nick", mcNick)
 
-                    // Выполняем добавление в вайтлист в основном потоке Bukkit
                     Bukkit.getScheduler().runTask(plugin2, Runnable {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu add $mcNick")
                     })
 
-                    // Отправляем сообщение в Discord
                     event.channel.sendMessage(response).queue()
                     logger_.info(response)
 
                 } else {
-                    // Недостаточно аргументов
                     event.channel.sendMessage(Config.getData(pcon, "inf.subcom")).queue()
                 }
             }
-
 
             message.startsWith("!wlu-del") -> {
                 val args = message.removePrefix("!wlu-del").trim()
 
                 if (args.isNotEmpty()) {
                     val mcNick = args
-
-                    // Подготавливаем сообщение об удалении
                     val response = Config.getData(pcon, "inf.wlu-").replace("@nick", mcNick)
 
-                    // Выполняем удаление из вайтлиста в основном потоке Bukkit
                     Bukkit.getScheduler().runTask(plugin2, Runnable {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu remove $mcNick")
                     })
 
-                    // Пробуем найти пользователя по Discord ID или нику
                     val member = event.guild.getMembers().find {
                         it.nickname?.equals(mcNick, ignoreCase = true) == true ||
                                 it.user.name.equals(mcNick, ignoreCase = true)
                     }
 
-                    // Если нашли — сбрасываем никнейм
-                    member?.modifyNickname(null)?.queue()
+                    member?.let {
+                        if (canBotInteractWith(event.guild, it)) {
+                            it.modifyNickname(null).queue()
+                        } else {
+                            val denied = Config.getData(pcon, "inf.no_perm_reset").replace("@nick", it.effectiveName)
+                            event.channel.sendMessage(denied).queue()
+                        }
+                    }
 
-                    // Отправляем сообщение в Discord
                     event.channel.sendMessage(response).queue()
                     logger_.info(response)
                 } else {
@@ -111,10 +116,14 @@ object DiscordBot : ListenerAdapter() {
                     val newNick = parts[1].trim()
                     val memberToUpdate = mentionedMembers[0]
 
-                    // Меняем ник в Discord
+                    if (!canBotInteractWith(event.guild, memberToUpdate)) {
+                        val denied = Config.getData(pcon, "inf.no_perm_change").replace("@nick", memberToUpdate.effectiveName)
+                        event.channel.sendMessage(denied).queue()
+                        return
+                    }
+
                     memberToUpdate.modifyNickname(newNick).queue()
 
-                    // Удаляем старый ник из вайтлиста
                     Bukkit.getScheduler().runTask(plugin2, Runnable {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu remove $oldNick")
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "wlu add $newNick")
@@ -131,22 +140,17 @@ object DiscordBot : ListenerAdapter() {
                 }
             }
 
-
             message.startsWith("!kick") -> {
                 val args = message.removePrefix("!kick").trim()
 
                 if (args.isNotEmpty()) {
                     val playerName = args
-
-                    // Подготавливаем сообщение об кике
                     val response = Config.getData(pcon, "inf.kick").replace("@nick", playerName)
 
-                    // Выполняем команду кика в основном потоке Bukkit
                     Bukkit.getScheduler().runTask(plugin2, Runnable {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kick $playerName")
                     })
 
-                    // Отправляем сообщение в Discord
                     event.channel.sendMessage(response).queue()
                     logger_.info(response)
                 } else {
@@ -251,8 +255,6 @@ object DiscordBot : ListenerAdapter() {
 
                 event.channel.sendMessage(helpMessage).queue()
             }
-
-
         }
     }
 }
